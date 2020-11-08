@@ -158,7 +158,8 @@ const List = (props) => {
           <Button
             style={styles.container.noChat.startData.button}
             block
-            onPress={() => onCheck()}>
+            // onPress={() => onCheck()}
+          >
             <Text style={styles.container.noChat.startData.button.text}>
               Start Your Chat
             </Text>
