@@ -167,6 +167,33 @@ const Room = (props) => {
     });
   };
 
+  const getDayliyTimeMessage = (currentTime, index) => {
+    if (index) {
+      if (
+        convertTime(currentTime) !== convertTime(messageData[index - 1].time) &&
+        convertTime(currentTime).length > 5
+      ) {
+        return (
+          <View
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexDirection: 'row',
+            }}>
+            <View
+              style={{
+                backgroundColor: '#039A54',
+                paddingVertical: 5,
+                paddingHorizontal: 10,
+                borderRadius: 10,
+              }}>
+              <Text style={{color: '#fff'}}>{convertTime(currentTime)}</Text>
+            </View>
+          </View>
+        );
+      }
+    }
+  };
   return (
     <View style={styles.view}>
       <Card style={styles.view.card}>
@@ -217,43 +244,51 @@ const Room = (props) => {
             data={messageData}
             keyExtractor={(_, index) => 'key' + index}
             numColumns={1}
-            renderItem={({item, index}) => (
-              <View
-                style={
-                  item.to !== paramsProps.email
-                    ? styles.view.chatView.partnerChat
-                    : styles.view.chatView.selfMessage
-                }
-                key={index}>
-                <View
-                  style={
-                    item.to !== paramsProps.email
-                      ? styles.view.chatView.partnerChat.balonChat
-                      : styles.view.chatView.selfMessage.balonChat
-                  }>
-                  <Text
+            renderItem={({item, index}) => {
+              return (
+                <View>
+                  {getDayliyTimeMessage(item.time, index)}
+                  <View
                     style={
                       item.to !== paramsProps.email
-                        ? styles.view.chatView.partnerChat.message
-                        : styles.view.chatView.selfMessage.message
-                    }>
-                    {item.message}
-                  </Text>
+                        ? styles.view.chatView.partnerChat
+                        : styles.view.chatView.selfMessage
+                    }
+                    key={index}>
+                    <View
+                      style={
+                        item.to !== paramsProps.email
+                          ? styles.view.chatView.partnerChat.balonChat
+                          : styles.view.chatView.selfMessage.balonChat
+                      }>
+                      <Text
+                        style={
+                          item.to !== paramsProps.email
+                            ? styles.view.chatView.partnerChat.message
+                            : styles.view.chatView.selfMessage.message
+                        }>
+                        {item.message}
+                      </Text>
+                    </View>
+                    <View style={styles.view.chatView.selfMessage.timeGroup}>
+                      <Text
+                        style={styles.view.chatView.selfMessage.timeGroup.time}>
+                        {convertTime(item.time)}
+                      </Text>
+                      {item.to === paramsProps.email && (
+                        <Icon
+                          type="FontAwesome5"
+                          name={!item.see ? 'check' : 'check-double'}
+                          style={
+                            styles.view.chatView.selfMessage.timeGroup.icon
+                          }
+                        />
+                      )}
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.view.chatView.selfMessage.timeGroup}>
-                  <Text style={styles.view.chatView.selfMessage.timeGroup.time}>
-                    {convertTime(item.time)}
-                  </Text>
-                  {item.to === paramsProps.email && (
-                    <Icon
-                      type="FontAwesome5"
-                      name={!item.see ? 'check' : 'check-double'}
-                      style={styles.view.chatView.selfMessage.timeGroup.icon}
-                    />
-                  )}
-                </View>
-              </View>
-            )}
+              );
+            }}
           />
         </View>
         <Form
@@ -271,8 +306,8 @@ const Room = (props) => {
               onChangeText={(e) => onChangeMessage(e)}
             />
             <TouchableOpacity
-              // onPress={sendMessage}
-              onPress={chooseFile}
+              onPress={sendMessage}
+              // onPress={chooseFile}
               disabled={message === '' || message === ' ' || message === null}>
               <Icon
                 type="FontAwesome5"

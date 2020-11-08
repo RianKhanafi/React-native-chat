@@ -105,31 +105,33 @@ const List = (props) => {
           data={contactUser}
           keyExtractor={(_, index) => 'key' + index}
           numColumns={1}
-          renderItem={({item, index}) => (
-            <TouchableOpacity
-              key={index}
-              activeOpacity={1}
-              onPress={() =>
-                navigation.navigate('Room', {
-                  name: item.name,
-                  email: item.email,
-                })
-              }>
-              <CardComponent
-                name={item.name}
-                lastMessage={
-                  item.message.length >= 22
-                    ? item.message.slice(1, 24) + '...'
-                    : item.message
-                }
-                time={convertTime(item.time)}
-                messageNotOpen={item.see ? item.seeCount : 0}
-                isOnline={true}
-                mainCard={index === 0}
-                imgUrl="https://images.unsplash.com/photo-1578146059353-7bd5f5b644ac?ixlib=rb-1.2.1&auto=format&fit=crop&w=1868&q=80"
-              />
-            </TouchableOpacity>
-          )}
+          renderItem={({item, index}) => {
+            return (
+              <TouchableOpacity
+                key={index}
+                activeOpacity={1}
+                onPress={() =>
+                  navigation.navigate('Room', {
+                    name: item.name,
+                    email: item.email,
+                  })
+                }>
+                <CardComponent
+                  name={item.name}
+                  lastMessage={
+                    item.message.length >= 22
+                      ? item.message.slice(1, 24) + '...'
+                      : item.message
+                  }
+                  time={convertTime(item.time)}
+                  messageNotOpen={item.see ? item.seeCount : 0}
+                  isOnline={true}
+                  mainCard={index === 0}
+                  imgUrl="https://images.unsplash.com/photo-1578146059353-7bd5f5b644ac?ixlib=rb-1.2.1&auto=format&fit=crop&w=1868&q=80"
+                />
+              </TouchableOpacity>
+            );
+          }}
         />
       ) : (
         <View style={styles.container.content}>
