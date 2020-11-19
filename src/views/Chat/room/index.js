@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
   Dimensions,
   Image,
 } from 'react-native';
@@ -17,15 +16,14 @@ import {useIsFocused} from '@react-navigation/native';
 import {CommonActions} from '@react-navigation/native';
 import ImagePicker from 'react-native-image-picker';
 
-// import {NavigationActions} from '';
-
-const {width, height} = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 
 const Room = (props) => {
   const paramsProps = props.route.params;
   const isFocused = useIsFocused();
   const [message, setMessage] = useState(null);
   const [messageData, setMessageData] = useState([]);
+  const [imageUri, setImageUri] = useState(null);
 
   useEffect(() => {
     if (isFocused) {
@@ -42,12 +40,18 @@ const Room = (props) => {
     let userName = currentUser.displayName;
     let partnerUserName = paramsProps.name;
     let conn = firebase.database();
+
     let messagedata = conn.ref('message/' + userName + '/' + partnerUserName);
     let updateRead = {};
 
     messagedata.on('value', (data) => {
       const result = [];
-      data.forEach((el) => {
+      data.forEach(async (el) => {
+        let file = null;
+        if (el.val().file) {
+          file = await getFile(el.val().file);
+        }
+
         result.push({
           _id: el.key,
           message: el.val().message,
@@ -55,6 +59,7 @@ const Room = (props) => {
           to: el.val().to,
           time: el.val().time,
           see: el.val().see,
+          ...(file && {file}),
           ...result,
         });
 
@@ -63,7 +68,6 @@ const Room = (props) => {
           currentUser.displayName !== el.val().fromName &&
           isFocused
         ) {
-          console.log('start red message');
           if (!el.val().see) {
             updateRead[
               'message/' +
@@ -89,7 +93,6 @@ const Room = (props) => {
 
       setMessageData(result);
 
-      console.log(updateRead);
       try {
         firebase.database().ref().update(updateRead);
         updateRead = {};
@@ -99,7 +102,58 @@ const Room = (props) => {
     });
   };
 
+  const getFileBlob = function (url, cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.responseType = 'blob';
+    xhr.addEventListener('load', function () {
+      cb(xhr.response);
+    });
+    xhr.send();
+  };
+
+  sendFile = (file) => {
+    const storageRef = firebase
+      .storage()
+      .ref('uploads/chat/image/' + file.fileName);
+
+    getFileBlob(file.uri, (blob) => {
+      const promiseFileName = new Promise(function (resolve, rejected) {
+        storageRef
+          .put(blob, {
+            contentType: 'image/jpeg',
+          })
+          .then((snapshot) => {
+            resolve(snapshot.metadata.name);
+          })
+          .catch((error) => {
+            console.log('error', error);
+          });
+      });
+
+      promiseFileName.then((img) => {
+        uplaodMessage(img);
+        setImageUri(null);
+      });
+    });
+  };
+
+  const getFile = async (filename) => {
+    const getFileRef = await firebase
+      .storage()
+      .ref('uploads/chat/image/' + filename)
+      .getDownloadURL();
+
+    return getFileRef;
+  };
+
   const sendMessage = async () => {
+    if (imageUri !== null) {
+      sendFile(imageUri);
+    } else uplaodMessage();
+  };
+
+  const uplaodMessage = (file = null) => {
     const currentUser = firebase.auth().currentUser;
     let userName = currentUser.displayName;
     let partnerUserName = paramsProps.name;
@@ -111,13 +165,14 @@ const Room = (props) => {
       .push().key;
 
     const messageDef = {
-      message: message,
+      message: message ? message : 'image',
       from: currentUser.email,
       to: paramsProps.email,
       toName: paramsProps.name,
       fromName: currentUser.displayName,
       see: false,
       time: firebase.database.ServerValue.TIMESTAMP,
+      ...(file && {file}),
     };
 
     let dataSend = {};
@@ -140,34 +195,29 @@ const Room = (props) => {
     }
   };
 
-  const chooseFile = () => {
+  const chooseFile = async () => {
     const options = {
       title: 'Select Avatar',
+      maxWidth: 600,
+      maxHeight: 600,
       storageOptions: {
         skipBackup: true,
         path: 'images',
       },
     };
 
-    ImagePicker.showImagePicker(options, (response) => {
-      console.log('Response = ', response);
-
+    ImagePicker.showImagePicker(options, async (response) => {
       if (response.didCancel) {
         console.log('User cancelled image picker');
       } else if (response.error) {
         console.log('ImagePicker Error: ', response.error);
       } else {
-        const uri = response.uri;
-        // this.setState({
-        //   selectedPictureUri: uri,
-        // });
-
-        console.log(uri);
+        setImageUri(response);
       }
     });
   };
 
-  const getDayliyTimeMessage = (currentTime, index) => {
+  const getDayliTimeMessage = (currentTime, index) => {
     if (index) {
       if (
         convertTime(currentTime) !== convertTime(messageData[index - 1].time) &&
@@ -194,6 +244,24 @@ const Room = (props) => {
       }
     }
   };
+
+  const getMessageinfo = (item) => {
+    return (
+      <View style={styles.view.chatView.selfMessage.timeGroup}>
+        <Text style={styles.view.chatView.selfMessage.timeGroup.time}>
+          {convertTime(item.time)}
+        </Text>
+        {item.to === paramsProps.email && (
+          <Icon
+            type="FontAwesome5"
+            name={!item.see ? 'check' : 'check-double'}
+            style={styles.view.chatView.selfMessage.timeGroup.icon}
+          />
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.view}>
       <Card style={styles.view.card}>
@@ -246,15 +314,32 @@ const Room = (props) => {
             numColumns={1}
             renderItem={({item, index}) => {
               return (
-                <View>
-                  {getDayliyTimeMessage(item.time, index)}
+                <View key={index}>
+                  {getDayliTimeMessage(item.time, index)}
+                  {item.file !== undefined && (
+                    <View>
+                      <Image
+                        source={{uri: item.file}}
+                        style={{
+                          width: 279,
+                          height: 219,
+                          resizeMode: 'cover',
+                          borderRadius: 20,
+                          alignSelf: 'flex-end',
+                          display: 'flex',
+                          backgroundColor: 'red',
+                          marginBottom: 20,
+                        }}
+                      />
+                      {getMessageinfo(item)}
+                    </View>
+                  )}
                   <View
                     style={
                       item.to !== paramsProps.email
                         ? styles.view.chatView.partnerChat
                         : styles.view.chatView.selfMessage
-                    }
-                    key={index}>
+                    }>
                     <View
                       style={
                         item.to !== paramsProps.email
@@ -270,21 +355,7 @@ const Room = (props) => {
                         {item.message}
                       </Text>
                     </View>
-                    <View style={styles.view.chatView.selfMessage.timeGroup}>
-                      <Text
-                        style={styles.view.chatView.selfMessage.timeGroup.time}>
-                        {convertTime(item.time)}
-                      </Text>
-                      {item.to === paramsProps.email && (
-                        <Icon
-                          type="FontAwesome5"
-                          name={!item.see ? 'check' : 'check-double'}
-                          style={
-                            styles.view.chatView.selfMessage.timeGroup.icon
-                          }
-                        />
-                      )}
-                    </View>
+                    {getMessageinfo(item)}
                   </View>
                 </View>
               );
@@ -305,10 +376,17 @@ const Room = (props) => {
               placeholder="Your Message"
               onChangeText={(e) => onChangeMessage(e)}
             />
+            <TouchableOpacity onPress={chooseFile}>
+              <Icon
+                type="FontAwesome"
+                name="image"
+                style={styles.view.iconImage}
+              />
+            </TouchableOpacity>
             <TouchableOpacity
               onPress={sendMessage}
-              // onPress={chooseFile}
-              disabled={message === '' || message === ' ' || message === null}>
+              // disabled={message === '' || message === ' ' || message === null}
+            >
               <Icon
                 type="FontAwesome5"
                 name="paper-plane"
@@ -373,6 +451,9 @@ const styles = {
       marginRight: 28,
       paddingBottom: 50,
       position: 'relative',
+      // selfMessageImg: {
+      //   alignSelf: 'flex-end',
+      // },
       selfMessage: {
         alignSelf: 'flex-end',
         marginBottom: 25,
@@ -442,10 +523,18 @@ const styles = {
       },
     },
     icon: {
-      margin: 20,
+      marginRight: 20,
+      marginTop: 20,
+      marginBottom: 20,
       fontSize: 20,
       color: color.green,
       transform: [{rotate: '20deg'}],
+    },
+    iconImage: {
+      // margin: 20,
+      fontSize: 20,
+      color: color.green,
+      // transform: [{rotate: '20deg'}],
     },
   },
 };

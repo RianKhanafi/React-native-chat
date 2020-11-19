@@ -40,7 +40,6 @@ const List = (props) => {
   const getMessage = async () => {
     const name = await AsyncStorage.getItem('name');
 
-    console.log(name);
     const db = firebase.database();
 
     try {
@@ -61,8 +60,6 @@ const List = (props) => {
           seeCount += el.val().see === 0 ? 1 : 0;
         });
 
-        console.log(seeCount);
-
         db.ref('users/' + name + '/contact/' + data.key).on(
           'value',
           (usersData) => {
@@ -78,7 +75,6 @@ const List = (props) => {
         );
       });
 
-      console.log('result', result);
       setContactUser(result.sort(compare));
     } catch (error) {
       console.log(error);
@@ -119,7 +115,7 @@ const List = (props) => {
                 <CardComponent
                   name={item.name}
                   lastMessage={
-                    item.message.length >= 22
+                    item?.message?.length ?? 0 >= 22
                       ? item.message.slice(1, 24) + '...'
                       : item.message
                   }

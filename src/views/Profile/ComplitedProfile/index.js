@@ -1,23 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { Text, Dimensions, View, StyleSheet } from 'react-native';
-import { Form, Input, Item, Button } from 'native-base';
-import { firebase } from '../../../libs/config/firebase';
-import { color } from '../../../component/baseColor';
+import React, {useEffect, useState} from 'react';
+import {Text, Dimensions, View} from 'react-native';
+import {Form, Input, Item, Button} from 'native-base';
+import {firebase} from '../../../libs/config/firebase';
+import {color} from '../../../component/baseColor';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import AsyncStorage from '@react-native-community/async-storage';
 
-import { Header } from '../../../component';
+import {Header} from '../../../component';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
-const ComplitedProfile = ({ navigation }) => {
+const ComplitedProfile = ({navigation}) => {
   const [userUpdate, setUserUpdate] = useState({
     displayName: '',
     email: '',
   });
-  
-  const [showPassword, setShowPassword] = useState(true);
 
   const handleChange = (value, name) => {
     setUserUpdate({
@@ -33,7 +31,7 @@ const ComplitedProfile = ({ navigation }) => {
   const getCurrentUser = async () => {
     try {
       const resp = await firebase.auth().currentUser;
- 
+
       setUserUpdate({
         displayName: resp.displayName,
         email: resp.email,
@@ -45,10 +43,9 @@ const ComplitedProfile = ({ navigation }) => {
 
   const onUpdate = async () => {
     try {
-      console.log(userUpdate.email);
       await firebase
         .auth()
-        .currentUser.updateProfile( {displayName: userUpdate.displayName});
+        .currentUser.updateProfile({displayName: userUpdate.displayName});
       await firebase.auth().currentUser.updateEmail(userUpdate.email);
       storeData(userUpdate.displayName);
       navigation.navigate('HomePage');

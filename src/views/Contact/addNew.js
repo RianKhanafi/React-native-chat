@@ -18,7 +18,8 @@ const AddNewContact = ({navigation}) => {
       [name]: value,
     });
   };
-  const handleAddNewCOntact = async () => {
+
+  const handleAddNewContact = async () => {
     let name = await AsyncStorage.getItem('name');
 
     try {
@@ -43,7 +44,6 @@ const AddNewContact = ({navigation}) => {
   return (
     <View style={styles.view}>
       <Header />
-
       <View style={styles.content}>
         <Text style={styles.content.title}>Add New</Text>
         <Text style={styles.content.subtitle}>More connections</Text>
@@ -66,7 +66,7 @@ const AddNewContact = ({navigation}) => {
         </Form>
 
         <Button
-          onPress={handleAddNewCOntact}
+          onPress={handleAddNewContact}
           block
           style={styles.content.addNew}>
           <Text style={styles.content.addNew.text}>Add New Contact</Text>

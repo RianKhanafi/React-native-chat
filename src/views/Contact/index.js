@@ -18,13 +18,11 @@ import {
   Input,
   Left,
 } from 'native-base';
-import List from '../Chat/list';
 import AsyncStorage from '@react-native-community/async-storage';
 import {firebase} from '../../libs/config/firebase';
 import {Header} from '../../component/header';
 import {color} from '../../component/baseColor';
 import {TouchableOpacity} from 'react-native-gesture-handler';
-// import Icon  from 'react-native-vector-icons';
 
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
